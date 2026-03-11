@@ -3,12 +3,13 @@ FROM python:3.11-slim
 WORKDIR /app
 
 COPY requirements.txt .
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-ENV PORT=5001
+ENV PORT=8080
 
-EXPOSE 5001
+EXPOSE 8080
 
-CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "-b", "0.0.0.0:5001", "app:app"]
+CMD ["python", "app.py"]
