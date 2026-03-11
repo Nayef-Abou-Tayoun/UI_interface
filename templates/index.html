@@ -1,163 +1,136 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<meta charset="utf-8">
 <title>Tactical Info Output</title>
 
-<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
 <style>
 
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-}
-
 body{
-font-family:'Courier New',monospace;
-background:#0a0a0a;
-min-height:100vh;
-padding:20px;
+background:#060606;
+font-family:"Courier New", monospace;
+color:#7fb069;
+margin:0;
+padding:40px;
 }
 
 .container{
+border:2px solid #1f3b1f;
 max-width:1200px;
 margin:auto;
-background:#1a1a1a;
-border:2px solid #2d4a2b;
-box-shadow:0 0 20px rgba(45,74,43,0.3);
+box-shadow:0 0 30px rgba(0,255,0,0.08);
 }
 
 header{
-background:#132013;
-color:#7fb069;
-padding:20px 30px;
-border-bottom:2px solid #2d4a2b;
+padding:30px;
+border-bottom:1px solid #1f3b1f;
+background:linear-gradient(90deg,#0a1f0a,#0f2e0f);
 }
 
 h1{
-font-size:1.6em;
-letter-spacing:2px;
-text-transform:uppercase;
+letter-spacing:4px;
+font-size:28px;
+margin:0;
+color:#9fdc89;
 }
 
 .subtitle{
-font-size:0.85em;
-opacity:0.8;
-margin-top:5px;
+font-size:12px;
+opacity:.8;
+margin-top:8px;
 }
 
-#status{
-padding:10px;
+.status{
 text-align:center;
-font-size:0.9em;
-border-bottom:1px solid #2d4a2b;
-}
-
-.connected{
-background:#132013;
-color:#7fb069;
-}
-
-.disconnected{
-background:#2a1a1a;
-color:#d4a574;
+padding:10px;
+border-bottom:1px solid #1f3b1f;
+background:#0d210d;
 }
 
 .controls{
-padding:12px 30px;
-background:#0d1f0d;
 display:flex;
 justify-content:space-between;
-border-bottom:1px solid #2d4a2b;
+padding:12px 30px;
+border-bottom:1px solid #1f3b1f;
+background:#081808;
 }
 
 .stats{
 display:flex;
-gap:30px;
-font-size:0.85em;
-color:#7fb069;
-}
-
-.stat-value{
-color:#d4a574;
-font-weight:700;
-margin-left:8px;
+gap:40px;
 }
 
 button{
-padding:6px 14px;
-background:#1a2f1a;
-color:#7fb069;
-border:1px solid #2d4a2b;
+background:#0b1e0b;
+border:1px solid #1f3b1f;
+color:#9fdc89;
+padding:6px 16px;
 cursor:pointer;
-font-family:'Courier New';
+font-family:"Courier New";
 }
 
 button:hover{
-background:#2d4a2b;
+background:#1f3b1f;
 }
 
-#outputs{
-height:550px;
-overflow-y:auto;
-padding:20px;
-background:#0a0a0a;
+#messages{
+height:520px;
+overflow:auto;
+padding:25px;
+background:#050505;
 }
 
-.output{
-background:#1a1a1a;
+.message{
 border-left:3px solid #7fb069;
 padding:12px;
-margin-bottom:10px;
+margin-bottom:12px;
+background:#0b0b0b;
 }
 
 .time{
-font-size:0.75em;
-color:#d4a574;
+font-size:11px;
+color:#c4e3b2;
 margin-bottom:5px;
 }
 
 .field{
-margin:3px 0;
+margin:4px 0;
 }
 
 .label{
-color:#7fb069;
+color:#9fdc89;
 font-weight:bold;
-margin-right:6px;
 }
 
 .value{
-color:#a8c99c;
+color:#b8e6a1;
 }
 
 .empty{
 text-align:center;
 padding:100px;
-color:#3d5a3b;
+opacity:.4;
 }
 
 footer{
-padding:12px;
 text-align:center;
-background:#0d1f0d;
-border-top:1px solid #2d4a2b;
-font-size:0.75em;
-color:#3d5a3b;
+padding:10px;
+border-top:1px solid #1f3b1f;
+background:#081808;
+font-size:12px;
 }
 
-footer code{
-color:#7fb069;
-background:#1a1a1a;
+code{
+background:#0a1a0a;
+border:1px solid #1f3b1f;
 padding:2px 6px;
-border:1px solid #2d4a2b;
 }
 
 </style>
+
 </head>
 
 <body>
@@ -166,23 +139,25 @@ border:1px solid #2d4a2b;
 
 <header>
 <h1>TACTICAL INFO OUTPUT</h1>
-<p class="subtitle">REAL-TIME DATA MONITORING</p>
+<div class="subtitle">REAL-TIME DATA MONITORING SYSTEM</div>
 </header>
 
-<div id="status">CONNECTING...</div>
+<div class="status">
+● CONNECTED — SYSTEM ACTIVE
+</div>
 
 <div class="controls">
 
 <div class="stats">
-<div>OUTPUTS <span class="stat-value" id="count">0</span></div>
-<div>UPTIME <span class="stat-value" id="uptime">00:00</span></div>
+<div>OUTPUTS: <span id="count">0</span></div>
+<div>UPTIME: <span id="uptime">00:00</span></div>
 </div>
 
-<button onclick="clearOutputs()">CLEAR</button>
+<button onclick="clearMessages()">CLEAR</button>
 
 </div>
 
-<div id="outputs">
+<div id="messages">
 
 <div class="empty" id="empty">
 AWAITING DATA OUTPUT
@@ -201,113 +176,86 @@ ENDPOINT:
 
 const socket = io();
 
-const outputs=document.getElementById("outputs");
-const status=document.getElementById("status");
-const count=document.getElementById("count");
-const uptime=document.getElementById("uptime");
-const endpoint=document.getElementById("endpoint");
+const messagesDiv = document.getElementById("messages");
+const countSpan = document.getElementById("count");
+const uptimeSpan = document.getElementById("uptime");
+const endpointSpan = document.getElementById("endpoint");
 
-endpoint.textContent = `${window.location.origin}/webhook`;
+endpointSpan.textContent = `${window.location.origin}/webhook`;
 
-let messages=0;
-let startTime=Date.now();
+let messages = 0;
+let start = Date.now();
 
 setInterval(()=>{
-let s=Math.floor((Date.now()-startTime)/1000);
-let m=Math.floor(s/60);
-s=s%60;
-uptime.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+let s = Math.floor((Date.now()-start)/1000);
+let m = Math.floor(s/60);
+s = s % 60;
+
+uptimeSpan.textContent =
+String(m).padStart(2,'0') + ":" + String(s).padStart(2,'0');
+
 },1000);
 
-socket.on("connect",()=>{
-status.textContent="CONNECTED";
-status.className="connected";
+
+socket.on("message_history",data=>{
+data.messages.forEach(addMessage)
 });
 
-socket.on("disconnect",()=>{
-status.textContent="DISCONNECTED";
-status.className="disconnected";
+socket.on("new_message",msg=>{
+addMessage(msg.data)
 });
 
-socket.on("message_history",(data)=>{
-data.messages.forEach(addOutput);
-});
 
-socket.on("new_message",(msg)=>{
-addOutput(msg.data,true);
-});
+function addMessage(data){
 
-socket.on("messages_cleared",()=>{
-outputs.innerHTML="";
-messages=0;
-count.textContent=0;
-});
-
-function addOutput(data,newItem=false){
-
-let empty=document.getElementById("empty");
+let empty = document.getElementById("empty");
 if(empty) empty.remove();
 
-let div=document.createElement("div");
-div.className="output";
+let div = document.createElement("div");
+div.className = "message";
 
-let time=data.timestamp
-?new Date(data.timestamp).toLocaleString()
-:new Date().toLocaleString();
+let time =
+data.timestamp ?
+new Date(data.timestamp).toLocaleString()
+:
+new Date().toLocaleString();
 
-let html=`<div class="time">${time}</div>`;
+let html = `<div class="time">${time}</div>`;
 
 for(let k in data){
 
 if(k==="timestamp") continue;
 
-let v=data[k];
+let v = data[k];
 
-if(typeof v==="object"){
-v=JSON.stringify(v);
-}
+if(typeof v === "object")
+v = JSON.stringify(v);
 
-html+=`<div class="field">
+html += `
+<div class="field">
 <span class="label">${k}:</span>
 <span class="value">${v}</span>
-</div>`;
+</div>
+`;
+
 }
 
-div.innerHTML=html;
+div.innerHTML = html;
 
-outputs.prepend(div);
+messagesDiv.prepend(div);
 
 messages++;
-count.textContent=messages;
-
-if(newItem) beep();
+countSpan.textContent = messages;
 
 }
 
-function clearOutputs(){
 
-if(confirm("CLEAR ALL OUTPUTS?")){
+function clearMessages(){
+
 socket.emit("clear_messages");
-}
 
-}
-
-function beep(){
-
-let ctx=new(window.AudioContext||window.webkitAudioContext)();
-let osc=ctx.createOscillator();
-let gain=ctx.createGain();
-
-osc.connect(gain);
-gain.connect(ctx.destination);
-
-osc.frequency.value=650;
-
-gain.gain.setValueAtTime(0.15,ctx.currentTime);
-gain.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+0.15);
-
-osc.start();
-osc.stop(ctx.currentTime+0.15);
+messagesDiv.innerHTML = "";
+countSpan.textContent = "0";
 
 }
 
