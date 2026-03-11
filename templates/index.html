@@ -1,400 +1,136 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Info Output Monitor</title>
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Courier New', 'Consolas', monospace;
-            background: #0a0a0a;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: #1a1a1a;
-            border-radius: 0;
-            border: 2px solid #2d4a2b;
-            box-shadow: 0 0 20px rgba(45, 74, 43, 0.3);
-            overflow: hidden;
-        }
-        
-        header {
-            background: linear-gradient(180deg, #1a2f1a 0%, #0d1f0d 100%);
-            color: #7fb069;
-            padding: 20px 30px;
-            border-bottom: 2px solid #2d4a2b;
-        }
-        
-        h1 {
-            font-size: 1.6em;
-            font-weight: 700;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: #7fb069;
-            text-shadow: 0 0 10px rgba(127, 176, 105, 0.5);
-        }
-        
-        .subtitle {
-            font-size: 0.85em;
-            opacity: 0.8;
-            margin-top: 5px;
-            color: #a8c99c;
-            letter-spacing: 1px;
-        }
-        
-        #status {
-            padding: 10px 30px;
-            font-weight: 600;
-            text-align: center;
-            font-size: 0.9em;
-            letter-spacing: 1px;
-            border-bottom: 1px solid #2d4a2b;
-        }
-        
-        .connected {
-            background: #1a2f1a;
-            color: #7fb069;
-            text-shadow: 0 0 5px rgba(127, 176, 105, 0.5);
-        }
-        
-        .disconnected {
-            background: #2a1a1a;
-            color: #d4a574;
-            text-shadow: 0 0 5px rgba(212, 165, 116, 0.5);
-        }
-        
-        .connecting {
-            background: #2a2a1a;
-            color: #d4a574;
-            text-shadow: 0 0 5px rgba(212, 165, 116, 0.5);
-        }
-        
-        .controls {
-            padding: 12px 30px;
-            background: #0d1f0d;
-            border-bottom: 1px solid #2d4a2b;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .stats {
-            display: flex;
-            gap: 30px;
-            font-size: 0.85em;
-            color: #7fb069;
-        }
-        
-        .stat-item {
-            letter-spacing: 1px;
-        }
-        
-        .stat-value {
-            font-weight: 700;
-            color: #d4a574;
-            margin-left: 8px;
-            text-shadow: 0 0 5px rgba(212, 165, 116, 0.3);
-        }
-        
-        button {
-            padding: 6px 14px;
-            border: 1px solid #2d4a2b;
-            border-radius: 0;
-            cursor: pointer;
-            font-size: 0.85em;
-            font-weight: 600;
-            font-family: 'Courier New', monospace;
-            letter-spacing: 1px;
-            transition: all 0.2s ease;
-            text-transform: uppercase;
-        }
-        
-        .clear-btn {
-            background: #1a2f1a;
-            color: #7fb069;
-            border-color: #2d4a2b;
-        }
-        
-        .clear-btn:hover {
-            background: #2d4a2b;
-            box-shadow: 0 0 10px rgba(127, 176, 105, 0.3);
-        }
-        
-        #messages {
-            height: 550px;
-            overflow-y: auto;
-            padding: 15px 30px;
-            background: #0a0a0a;
-        }
-        
-        #messages::-webkit-scrollbar {
-            width: 10px;
-        }
-        
-        #messages::-webkit-scrollbar-track {
-            background: #0a0a0a;
-            border-left: 1px solid #2d4a2b;
-        }
-        
-        #messages::-webkit-scrollbar-thumb {
-            background: #2d4a2b;
-            border-radius: 0;
-        }
-        
-        #messages::-webkit-scrollbar-thumb:hover {
-            background: #3d5a3b;
-        }
-        
-        .output-info {
-            padding: 12px 15px;
-            margin: 8px 0;
-            background: #1a1a1a;
-            border-left: 3px solid #7fb069;
-            border-radius: 0;
-            animation: fadeIn 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-        }
-        
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateX(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        .output-time {
-            color: #d4a574;
-            font-size: 0.75em;
-            margin-bottom: 6px;
-            letter-spacing: 1px;
-            text-shadow: 0 0 3px rgba(212, 165, 116, 0.3);
-        }
-        
-        .output-text {
-            color: #a8c99c;
-            line-height: 1.6;
-            font-size: 0.9em;
-            letter-spacing: 0.5px;
-            font-family: 'Courier New', monospace;
-        }
-        
-        .output-field {
-            margin: 4px 0;
-            padding: 4px 0;
-        }
-        
-        .output-label {
-            color: #7fb069;
-            font-weight: 600;
-            display: inline-block;
-            min-width: 120px;
-            text-transform: uppercase;
-            font-size: 0.85em;
-        }
-        
-        .output-value {
-            color: #a8c99c;
-            word-break: break-word;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 100px 20px;
-            color: #3d5a3b;
-        }
-        
-        .empty-state-icon {
-            font-size: 3em;
-            margin-bottom: 15px;
-            opacity: 0.5;
-        }
-        
-        .empty-state-text {
-            font-size: 1em;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-        
-        footer {
-            padding: 12px 30px;
-            background: #0d1f0d;
-            text-align: center;
-            color: #3d5a3b;
-            border-top: 1px solid #2d4a2b;
-            font-size: 0.75em;
-            letter-spacing: 1px;
-        }
-        
-        footer code {
-            color: #7fb069;
-            background: #1a1a1a;
-            padding: 2px 8px;
-            border: 1px solid #2d4a2b;
-        }
-    </style>
+<meta charset="utf-8">
+<title>Tactical Incident Dashboard</title>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+<style>
+body{
+    font-family: Arial, Helvetica, sans-serif;
+    background:#0f172a;
+    color:white;
+    margin:0;
+}
+
+header{
+    background:#1e293b;
+    padding:20px;
+    font-size:22px;
+}
+
+.container{
+    padding:20px;
+}
+
+.message{
+    background:#1e293b;
+    padding:15px;
+    margin-bottom:10px;
+    border-radius:6px;
+}
+
+.timestamp{
+    font-size:12px;
+    color:#94a3b8;
+}
+
+.endpoint{
+    background:#020617;
+    padding:10px;
+    margin-bottom:20px;
+    border-radius:6px;
+}
+
+button{
+    padding:10px 16px;
+    background:#3b82f6;
+    border:none;
+    color:white;
+    border-radius:4px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#2563eb;
+}
+
+pre{
+    white-space:pre-wrap;
+    font-size:14px;
+}
+</style>
 </head>
+
 <body>
-    <div class="container">
-        <header>
-            <h1>⬢ TACTICAL INFO OUTPUT</h1>
-            <p class="subtitle">REAL-TIME DATA MONITORING SYSTEM</p>
-        </header>
-        
-        <div id="status" class="connecting">● CONNECTING...</div>
-        
-        <div class="controls">
-            <div class="stats">
-                <div class="stat-item">
-                    OUTPUTS: <span class="stat-value" id="messageCount">0</span>
-                </div>
-                <div class="stat-item">
-                    UPTIME: <span class="stat-value" id="sessionTime">00:00</span>
-                </div>
-            </div>
-            <button class="clear-btn" onclick="clearOutputs()">CLEAR</button>
-        </div>
-        
-        <div id="outputs">
-            <div class="empty-state">
-                <div class="empty-state-icon">⬢</div>
-                <div class="empty-state-text">AWAITING DATA OUTPUT</div>
-            </div>
-        </div>
-        
-        <footer>
-            ENDPOINT: <code id="webhookUrl">http://localhost:5001/webhook</code>
-        </footer>
-    </div>
-    
-    <script>
-        const socket = io();
-        const outputsDiv = document.getElementById('outputs');
-        const statusDiv = document.getElementById('status');
-        const outputCountSpan = document.getElementById('messageCount');
-        const sessionTimeSpan = document.getElementById('sessionTime');
-        const webhookUrlSpan = document.getElementById('webhookUrl');
-        
-        let outputCount = 0;
-        let sessionStartTime = Date.now();
-        
-        webhookUrlSpan.textContent = `http://${window.location.hostname}:5001/webhook`;
-        
-        setInterval(() => {
-            const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
-            const minutes = Math.floor(elapsed / 60);
-            const seconds = elapsed % 60;
-            sessionTimeSpan.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        }, 1000);
-        
-        socket.on('connect', function() {
-            statusDiv.textContent = '● CONNECTED - SYSTEM ACTIVE';
-            statusDiv.className = 'connected';
-        });
-        
-        socket.on('disconnect', function() {
-            statusDiv.textContent = '● DISCONNECTED - SYSTEM OFFLINE';
-            statusDiv.className = 'disconnected';
-        });
-        
-        socket.on('message_history', function(data) {
-            data.messages.forEach(msg => displayOutputInfo(msg, false));
-        });
-        
-        socket.on('new_message', function(msg) {
-            displayOutputInfo(msg.data, true);
-        });
-        
-        socket.on('messages_cleared', function() {
-            outputsDiv.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">⬢</div>
-                    <div class="empty-state-text">AWAITING DATA OUTPUT</div>
-                </div>
-            `;
-            outputCount = 0;
-            outputCountSpan.textContent = '0';
-        });
-        
-        function displayOutputInfo(data, isNew) {
-            const emptyState = outputsDiv.querySelector('.empty-state');
-            if (emptyState) {
-                emptyState.remove();
-            }
-            
-            const outputDiv = document.createElement('div');
-            outputDiv.className = 'output-info';
-            
-            const timestamp = data.timestamp ? new Date(data.timestamp).toLocaleString() : new Date().toLocaleString();
-            
-            // Build structured output display
-            let outputHTML = `<div class="output-time">${timestamp}</div><div class="output-text">`;
-            
-            if (typeof data === 'string') {
-                outputHTML += `<div class="output-field"><span class="output-label">Data:</span> <span class="output-value">${data}</span></div>`;
-            } else if (typeof data === 'object' && data !== null) {
-                // Display all fields in structured format
-                Object.entries(data).forEach(([key, value]) => {
-                    if (key !== 'timestamp') {
-                        let displayValue = value;
-                        if (typeof value === 'object') {
-                            displayValue = JSON.stringify(value, null, 2);
-                        }
-                        outputHTML += `<div class="output-field"><span class="output-label">${key}:</span> <span class="output-value">${displayValue}</span></div>`;
-                    }
-                });
-            }
-            
-            outputHTML += '</div>';
-            outputDiv.innerHTML = outputHTML;
-            
-            outputsDiv.insertBefore(outputDiv, outputsDiv.firstChild);
-            
-            outputCount++;
-            outputCountSpan.textContent = outputCount;
-            
-            if (isNew) {
-                playNotificationSound();
-            }
-        }
-        
-        function clearOutputs() {
-            if (confirm('CLEAR ALL OUTPUTS?')) {
-                socket.emit('clear_messages');
-            }
-        }
-        
-        function playNotificationSound() {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.value = 600;
-            oscillator.type = 'square';
-            
-            gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.15);
-        }
-    </script>
+
+<header>
+⚡ Tactical Operations Dashboard
+</header>
+
+<div class="container">
+
+<div class="endpoint">
+Webhook Endpoint: <b>/webhook</b>
+</div>
+
+<button onclick="clearMessages()">Clear Messages</button>
+
+<h3>Incident Feed</h3>
+
+<div id="messages"></div>
+
+</div>
+
+<script>
+
+const socket = io();
+
+const messagesDiv = document.getElementById("messages");
+
+function addMessage(data){
+
+    const message = document.createElement("div");
+    message.className="message";
+
+    const timestamp = document.createElement("div");
+    timestamp.className="timestamp";
+
+    timestamp.innerText = data.timestamp || "";
+
+    const content = document.createElement("pre");
+    content.innerText = JSON.stringify(data, null, 2);
+
+    message.appendChild(timestamp);
+    message.appendChild(content);
+
+    messagesDiv.prepend(message);
+}
+
+socket.on("connect", ()=>{
+    console.log("Connected to server");
+})
+
+socket.on("new_message", msg=>{
+    addMessage(msg.data);
+})
+
+socket.on("message_history", data=>{
+    data.messages.forEach(m=>{
+        addMessage(m)
+    })
+})
+
+socket.on("messages_cleared", ()=>{
+    messagesDiv.innerHTML="";
+})
+
+function clearMessages(){
+    socket.emit("clear_messages");
+}
+
+</script>
+
 </body>
 </html>
