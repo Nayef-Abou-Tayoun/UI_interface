@@ -1,136 +1,163 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta charset="utf-8">
 <title>Tactical Info Output</title>
 
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
 <style>
 
-body{
-background:#060606;
-font-family:"Courier New", monospace;
-color:#7fb069;
+*{
 margin:0;
-padding:40px;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:'Courier New',monospace;
+background:#0a0a0a;
+min-height:100vh;
+padding:20px;
 }
 
 .container{
-border:2px solid #1f3b1f;
 max-width:1200px;
 margin:auto;
-box-shadow:0 0 30px rgba(0,255,0,0.08);
+background:#1a1a1a;
+border:2px solid #2d4a2b;
+box-shadow:0 0 20px rgba(45,74,43,0.3);
 }
 
 header{
-padding:30px;
-border-bottom:1px solid #1f3b1f;
-background:linear-gradient(90deg,#0a1f0a,#0f2e0f);
+background:#132013;
+color:#7fb069;
+padding:20px 30px;
+border-bottom:2px solid #2d4a2b;
 }
 
 h1{
-letter-spacing:4px;
-font-size:28px;
-margin:0;
-color:#9fdc89;
+font-size:1.6em;
+letter-spacing:2px;
+text-transform:uppercase;
 }
 
 .subtitle{
-font-size:12px;
-opacity:.8;
-margin-top:8px;
+font-size:0.85em;
+opacity:0.8;
+margin-top:5px;
 }
 
-.status{
-text-align:center;
+#status{
 padding:10px;
-border-bottom:1px solid #1f3b1f;
-background:#0d210d;
+text-align:center;
+font-size:0.9em;
+border-bottom:1px solid #2d4a2b;
+}
+
+.connected{
+background:#132013;
+color:#7fb069;
+}
+
+.disconnected{
+background:#2a1a1a;
+color:#d4a574;
 }
 
 .controls{
+padding:12px 30px;
+background:#0d1f0d;
 display:flex;
 justify-content:space-between;
-padding:12px 30px;
-border-bottom:1px solid #1f3b1f;
-background:#081808;
+border-bottom:1px solid #2d4a2b;
 }
 
 .stats{
 display:flex;
-gap:40px;
+gap:30px;
+font-size:0.85em;
+color:#7fb069;
+}
+
+.stat-value{
+color:#d4a574;
+font-weight:700;
+margin-left:8px;
 }
 
 button{
-background:#0b1e0b;
-border:1px solid #1f3b1f;
-color:#9fdc89;
-padding:6px 16px;
+padding:6px 14px;
+background:#1a2f1a;
+color:#7fb069;
+border:1px solid #2d4a2b;
 cursor:pointer;
-font-family:"Courier New";
+font-family:'Courier New';
 }
 
 button:hover{
-background:#1f3b1f;
+background:#2d4a2b;
 }
 
-#messages{
-height:520px;
-overflow:auto;
-padding:25px;
-background:#050505;
+#outputs{
+height:550px;
+overflow-y:auto;
+padding:20px;
+background:#0a0a0a;
 }
 
-.message{
+.output{
+background:#1a1a1a;
 border-left:3px solid #7fb069;
 padding:12px;
-margin-bottom:12px;
-background:#0b0b0b;
+margin-bottom:10px;
 }
 
 .time{
-font-size:11px;
-color:#c4e3b2;
+font-size:0.75em;
+color:#d4a574;
 margin-bottom:5px;
 }
 
 .field{
-margin:4px 0;
+margin:3px 0;
 }
 
 .label{
-color:#9fdc89;
+color:#7fb069;
 font-weight:bold;
+margin-right:6px;
 }
 
 .value{
-color:#b8e6a1;
+color:#a8c99c;
 }
 
 .empty{
 text-align:center;
 padding:100px;
-opacity:.4;
+color:#3d5a3b;
 }
 
 footer{
+padding:12px;
 text-align:center;
-padding:10px;
-border-top:1px solid #1f3b1f;
-background:#081808;
-font-size:12px;
+background:#0d1f0d;
+border-top:1px solid #2d4a2b;
+font-size:0.75em;
+color:#3d5a3b;
 }
 
-code{
-background:#0a1a0a;
-border:1px solid #1f3b1f;
+footer code{
+color:#7fb069;
+background:#1a1a1a;
 padding:2px 6px;
+border:1px solid #2d4a2b;
 }
 
 </style>
-
 </head>
 
 <body>
@@ -139,25 +166,23 @@ padding:2px 6px;
 
 <header>
 <h1>TACTICAL INFO OUTPUT</h1>
-<div class="subtitle">REAL-TIME DATA MONITORING SYSTEM</div>
+<p class="subtitle">REAL-TIME FIELD VISUAL DETECTION</p>
 </header>
 
-<div class="status">
-● CONNECTED — SYSTEM ACTIVE
-</div>
+<div id="status">CONNECTING...</div>
 
 <div class="controls">
 
 <div class="stats">
-<div>OUTPUTS: <span id="count">0</span></div>
-<div>UPTIME: <span id="uptime">00:00</span></div>
+<div>OUTPUTS <span class="stat-value" id="count">0</span></div>
+<div>TIME <span class="stat-value" id="time">00:00:00</span></div>
 </div>
 
-<button onclick="clearMessages()">CLEAR</button>
+<button onclick="clearOutputs()">CLEAR</button>
 
 </div>
 
-<div id="messages">
+<div id="outputs">
 
 <div class="empty" id="empty">
 AWAITING DATA OUTPUT
@@ -176,86 +201,142 @@ ENDPOINT:
 
 const socket = io();
 
-const messagesDiv = document.getElementById("messages");
-const countSpan = document.getElementById("count");
-const uptimeSpan = document.getElementById("uptime");
-const endpointSpan = document.getElementById("endpoint");
+const outputs=document.getElementById("outputs");
+const status=document.getElementById("status");
+const count=document.getElementById("count");
+const endpoint=document.getElementById("endpoint");
+const time=document.getElementById("time");
 
-endpointSpan.textContent = `${window.location.origin}/webhook`;
+endpoint.textContent = `${window.location.origin}/webhook`;
 
-let messages = 0;
-let start = Date.now();
+let messages=0;
+
+/* 24H CLOCK */
 
 setInterval(()=>{
-let s = Math.floor((Date.now()-start)/1000);
-let m = Math.floor(s/60);
-s = s % 60;
 
-uptimeSpan.textContent =
-String(m).padStart(2,'0') + ":" + String(s).padStart(2,'0');
+const now=new Date();
+
+const hours=String(now.getHours()).padStart(2,'0');
+const minutes=String(now.getMinutes()).padStart(2,'0');
+const seconds=String(now.getSeconds()).padStart(2,'0');
+
+time.textContent=`${hours}:${minutes}:${seconds}`;
 
 },1000);
 
+/* SOCKET EVENTS */
 
-socket.on("message_history",data=>{
-data.messages.forEach(addMessage)
+socket.on("connect",()=>{
+status.textContent="CONNECTED";
+status.className="connected";
 });
 
-socket.on("new_message",msg=>{
-addMessage(msg.data)
+socket.on("disconnect",()=>{
+status.textContent="DISCONNECTED";
+status.className="disconnected";
 });
 
+socket.on("message_history",(data)=>{
+data.messages.forEach(addOutput);
+});
 
-function addMessage(data){
+socket.on("new_message",(msg)=>{
+addOutput(msg.data,true);
+});
 
-let empty = document.getElementById("empty");
+socket.on("messages_cleared",()=>{
+outputs.innerHTML="";
+messages=0;
+count.textContent=0;
+
+const empty=document.createElement("div");
+empty.className="empty";
+empty.id="empty";
+empty.textContent="AWAITING DATA OUTPUT";
+
+outputs.appendChild(empty);
+});
+
+/* ADD OUTPUT */
+
+function addOutput(data,newItem=false){
+
+let empty=document.getElementById("empty");
 if(empty) empty.remove();
 
-let div = document.createElement("div");
-div.className = "message";
+let div=document.createElement("div");
+div.className="output";
 
-let time =
-data.timestamp ?
-new Date(data.timestamp).toLocaleString()
-:
-new Date().toLocaleString();
+let timeStamp=data.timestamp
+?new Date(data.timestamp).toLocaleString()
+:new Date().toLocaleString();
 
-let html = `<div class="time">${time}</div>`;
+let html=`<div class="time">${timeStamp}</div>`;
 
 for(let k in data){
 
 if(k==="timestamp") continue;
 
-let v = data[k];
+let label = k==="message" ? "Detected Object" : k;
 
-if(typeof v === "object")
-v = JSON.stringify(v);
+let v=data[k];
 
-html += `
-<div class="field">
-<span class="label">${k}:</span>
-<span class="value">${v}</span>
-</div>
-`;
-
+if(typeof v==="object"){
+v=JSON.stringify(v);
 }
 
-div.innerHTML = html;
+html+=`<div class="field">
+<span class="label">${label}:</span>
+<span class="value">${v}</span>
+</div>`;
+}
 
-messagesDiv.prepend(div);
+div.innerHTML=html;
+
+outputs.prepend(div);
 
 messages++;
-countSpan.textContent = messages;
+count.textContent=messages;
+
+if(newItem) beep();
 
 }
 
+/* CLEAR OUTPUTS */
 
-function clearMessages(){
+function clearOutputs(){
+
+if(confirm("CLEAR ALL OUTPUTS?")){
 
 socket.emit("clear_messages");
 
-messagesDiv.innerHTML = "";
-countSpan.textContent = "0";
+outputs.innerHTML="";
+messages=0;
+count.textContent=0;
+
+}
+
+}
+
+/* ALERT SOUND */
+
+function beep(){
+
+let ctx=new(window.AudioContext||window.webkitAudioContext)();
+let osc=ctx.createOscillator();
+let gain=ctx.createGain();
+
+osc.connect(gain);
+gain.connect(ctx.destination);
+
+osc.frequency.value=650;
+
+gain.gain.setValueAtTime(0.15,ctx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+0.15);
+
+osc.start();
+osc.stop(ctx.currentTime+0.15);
 
 }
 
